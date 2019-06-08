@@ -3,14 +3,15 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define N 2
-#define MAX 100
+#define N 3
+#define MAX 100000
 
 typedef struct {
   int * v;
   int beg, end;
 } thread_args;
 
+/* Merge two sorted arrays. */
 void merge(int *v, int il, int jl, int ir, int jr)
 {
     int tmp[MAX];
@@ -40,7 +41,6 @@ void merge(int *v, int il, int jl, int ir, int jr)
 void mergesort(int * v, int i, int j)
 {
   int mid;
-  /* printf("%d %d %d %d\n", i, j, v[i], v[j]); */
 
   if (i < j)
   {
@@ -65,38 +65,52 @@ int main()
   pthread_t workers[N];
   thread_args *send_args[N];
   int input[MAX];
-  int k = 0;
+  int n, k = 0;
   char c;
 
+  /* Read input numbers. */
   do
   {
     scanf("%d", &input[k++]);
   }
   while((c = getchar()) != '\n');
 
-  for (int i = 0; i < N; i++)
-  {
-    if (k > i) //?
-    {
-      (send_args[i]) = (thread_args*) malloc(sizeof(thread_args));
-      (send_args[i])->v = input;
-      (send_args[i])->beg = (k/N)*i;
-      (send_args[i])->end = (k/N)*(i+1) - 1;
-      pthread_create(&(workers[i]), NULL, worker, (void *) send_args[i]);
-    }
-  }
+  /* Max number of threads lesser or equal to number of entries. */
+  if (k >= N)
+    n = N;
+  else
+    n = k;
 
-  for (int i = 0; i < N; i++)
+  /* Create args for each thread. */
+  for (int i = 0; i < n; i++)
+  {
+    (send_args[i]) = (thread_args*) malloc(sizeof(thread_args));
+    (send_args[i])->v = input;
+    (send_args[i])->beg = (k/n)*i;
+    (send_args[i])->end = (k/n)*(i+1) - 1;
+  }
+  /* If number of entries not divisible by n, add to last thread. */
+  (send_args[n-1])->end += k%n;
+
+  /* Create threads. */
+  for (int i = 0; i < n; i++)
+    pthread_create(&(workers[i]), NULL, worker, (void *) send_args[i]);
+
+  /* Wait all threads to finish. */
+  for (int i = 0; i < n; i++)
     pthread_join(workers[i], NULL);
 
-  for (int i = 0; i < N-1; i++)
+  /* Merge all sorted subarrays of each thread. */
+  for (int i = 0; i < n-1; i++)
   {
-    merge(input, (send_args[i])->beg, (send_args[i])->end, (send_args[i+1])->beg, (send_args[i+1])->end);
+    merge(input, (send_args[0])->beg, (send_args[i])->end, (send_args[i+1])->beg, (send_args[i+1])->end);
   }
 
-  for (int i = 0; i < N; i++)
+  /* Free memory from send_args struct. */
+  for (int i = 0; i < n; i++)
     free(send_args[i]);
 
+  /* Print sorted vector. */
   for (int i = 0; i < k-1; i++)
     printf("%d ", input[i]);
   printf("%d\n", input[k-1]);
