@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define N 2
+#define N 1
 #define MAX 100
 
 typedef struct {
@@ -53,6 +53,8 @@ void mergesort(int * v, int i, int j)
 void *worker(void *arg) {
   thread_args *info = (thread_args *) arg;
 
+  printf("%d %d %d %d\n", info->beg, (info)->end, (info)->v[(info)->beg], (info)->v[(info)->end]);
+
   mergesort(info->v, info->beg, info->end);
   free(info);
 
@@ -61,7 +63,7 @@ void *worker(void *arg) {
 
 
 int main()
-{ 
+{
   pthread_t workers[N];
   thread_args *send_args[N];
   int input[MAX];
@@ -76,11 +78,14 @@ int main()
 
   for (int i = 0; i < N; i++)
   {
-    (send_args[i]) = (thread_args*) malloc(sizeof(thread_args));
-    (send_args[i])->v = input;
-    (send_args[i])->beg = (k/N)*i;
-    (send_args[i])->end = (k/N)*(i+1) - 1;
-    pthread_create(&(workers[i]), NULL, worker, (void *) send_args[i]);
+    if (k > i) //?
+    {
+      (send_args[i]) = (thread_args*) malloc(sizeof(thread_args));
+      (send_args[i])->v = input;
+      (send_args[i])->beg = (k/N)*i;
+      (send_args[i])->end = (k/N)*(i+1) - 1;
+      pthread_create(&(workers[i]), NULL, worker, (void *) send_args[i]);
+    }
   }
 
   printf(".\n");
