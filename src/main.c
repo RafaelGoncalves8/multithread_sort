@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define N 1
+#define N 2
 #define MAX 100
 
 typedef struct {
@@ -40,8 +40,9 @@ void merge(int *v, int il, int jl, int ir, int jr)
 void mergesort(int * v, int i, int j)
 {
   int mid;
+  /* printf("%d %d %d %d\n", i, j, v[i], v[j]); */
 
-  if (i <= j)
+  if (i < j)
   {
     mid = (i+j)/2;
     mergesort(v, i, mid);
@@ -53,10 +54,7 @@ void mergesort(int * v, int i, int j)
 void *worker(void *arg) {
   thread_args *info = (thread_args *) arg;
 
-  printf("%d %d %d %d\n", info->beg, (info)->end, (info)->v[(info)->beg], (info)->v[(info)->end]);
-
   mergesort(info->v, info->beg, info->end);
-  free(info);
 
   return NULL;
 }
@@ -88,14 +86,16 @@ int main()
     }
   }
 
-  printf(".\n");
+  for (int i = 0; i < N; i++)
+    pthread_join(workers[i], NULL);
+
+  for (int i = 0; i < N-1; i++)
+  {
+    merge(input, (send_args[i])->beg, (send_args[i])->end, (send_args[i+1])->beg, (send_args[i+1])->end);
+  }
 
   for (int i = 0; i < N; i++)
-  {
-    pthread_join(workers[i], NULL);
-    printf("%d %d %d %d\n", (send_args[i])->beg, (send_args[i])->end, (send_args[i])->v[(send_args[i])->beg], (send_args[i])->v[(send_args[i])->end]);
     free(send_args[i]);
-  }
 
   for (int i = 0; i < k-1; i++)
     printf("%d ", input[i]);
